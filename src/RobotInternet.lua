@@ -4,6 +4,7 @@ local term = require("term")
 local text = require("text")
 local event = require("event")
 local shell = require("shell")
+local robot = require("robot")
 
 if not component.isAvailable("internet") then
   io.stderr:write("telnet requires an Internet Card to run!\n")
@@ -45,23 +46,39 @@ local function print(message, overwrite)
     component.gpu.set(1, h - 1, line)
   until not message or message == ""
 end
+
+local function cmd(line)
+    print("Server:")
+    local cmd = string.sub(line,1,3)
+    --local cmd=line
+    print(cmd)
+    if cmd == "FWD" then
+        print("move forward")
+        robot.forward()
+    end
+    --print("end cmd")
+end
+
 local function draw()
-  if not sock then
+    if not sock then
     return false
   end
   repeat
-    local ok, line = pcall(sock.read, sock)
-    if ok then
-      if not line then
-        print("Connection lost.")
-        sock:close()
-        sock = nil
-        return false
+      local ok, line = pcall(sock.read, sock)
+      if ok then
+          print("ok")
+          print(line)
+          if not line then
+              print("Connection lost.")
+              sock:close()
+              sock = nil
+              return false
+          end
+          cmd(line)
       end
-      print(line)
-    end
   until not ok
 end
+
 local function uin()
   term.setCursor(1,h)
   line = term.read(hist)
@@ -72,9 +89,6 @@ local function uin()
     sock:write(line2.."\r\n")
   end
   return true
-end
-local function cmd()
---TODO: handle the commands
 end
 
 local going = true
