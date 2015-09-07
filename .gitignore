@@ -60,3 +60,4 @@ $RECYCLE.BIN/
 
 #intelliJ folders
 .idea/
+out/

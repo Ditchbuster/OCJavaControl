@@ -187,6 +187,8 @@ public class Server {
         String username;
         // the date I connect
         String date;
+        // robot this thread is connected to
+        Robot myRobot;
 
         // Constructore
         ClientThread(Socket socket) {
@@ -203,6 +205,10 @@ public class Server {
                 // read the username
                 username = in.readLine();
                 display(username + " just connected.");
+                if(username.length()>=5 && username.startsWith("robot")) {
+                    myRobot = new Robot(username);
+                    out.println("Created robot");
+                }
             }
             catch (IOException e) {
                 display("Exception creating new Input/output Streams: " + e);
@@ -232,8 +238,8 @@ public class Server {
                     break;
                 }
                 else{
-                    System.out.println(cm);
-
+                    display(cm);
+                    out.println("FWD");
                 }
 
                 /* Switch on the type of message receive
