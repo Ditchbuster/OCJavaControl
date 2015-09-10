@@ -183,6 +183,7 @@ public class Server {
         String cm; //chat message
         // my unique id (easier for deconnection)
         int id;
+        int temp; //just a temp number for now
         // the Username of the Client
         String username;
         // the date I connect
@@ -192,6 +193,8 @@ public class Server {
 
         // Constructore
         ClientThread(Socket socket) {
+
+            temp =0;
             // a unique id
             id = ++uniqueId;
             this.socket = socket;
@@ -239,7 +242,7 @@ public class Server {
                 }
                 else{
                     display(cm);
-                    out.println("FWD");
+                    out.println("FWD " + temp++);
                 }
 
                 /* Switch on the type of message receive

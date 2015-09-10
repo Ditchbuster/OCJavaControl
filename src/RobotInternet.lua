@@ -7,9 +7,15 @@ local shell = require("shell")
 local robot = require("robot")
 
 if not component.isAvailable("internet") then
-  io.stderr:write("telnet requires an Internet Card to run!\n")
+  io.stderr:write("requires an Internet Card to run!\n")
   return
 end
+if not component.isAvailable("robot") then
+    io.stderr:write("requires a robot to run!\n")
+    return
+end
+
+local cmdList = List.new()
 
 local args, options = shell.parse(...)
 if #args < 1 then
@@ -32,6 +38,8 @@ end
 
 sock:setTimeout(0.05)
 
+sock:write("robot")
+
 --Function from the built in IRC program
 local function print(message, overwrite)
   local w, h = component.gpu.getResolution()
@@ -48,13 +56,22 @@ local function print(message, overwrite)
 end
 
 local function cmd(line)
-    print("Server:")
+    --print("Server:")
     local cmd = string.sub(line,1,3)
     --local cmd=line
-    print(cmd)
-    if cmd == "FWD" then
-        print("move forward")
-        robot.forward()
+    --print(cmd)
+    if(cmd=="FWD") then
+        local rtn = true
+        local moves = string.match(line,"%d+")
+        local x
+        for x = 0, moves do
+            rtn=robot.forward()
+            if(not rtn) then
+                return rtn, x
+            end
+
+        end
+        return rtn, x
     end
     --print("end cmd")
 end
@@ -66,7 +83,7 @@ local function draw()
   repeat
       local ok, line = pcall(sock.read, sock)
       if ok then
-          print("ok")
+          --print("ok")
           print(line)
           if not line then
               print("Connection lost.")
@@ -74,9 +91,10 @@ local function draw()
               sock = nil
               return false
           end
-          cmd(line)
+          List.pushright(cmdList,text.trim(line)) --trim whitespace off end and start and insert into table
       end
   until not ok
+
 end
 
 local function uin()
@@ -105,4 +123,41 @@ end
 if sock then
   sock:write("logout\r\n")
   sock:close()
+end
+
+
+--********************* List functions *************
+List = {}
+function List.new()
+    return {first = 0, last = -1}
+end
+
+function List.pushleft (list, value)
+    local first = list.first - 1
+    list.first = first
+    list[first] = value
+end
+
+function List.pushright (list, value)
+    local last = list.last + 1
+    list.last = last
+    list[last] = value
+end
+
+function List.popleft (list)
+    local first = list.first
+    if first > list.last then error("list is empty") end
+    local value = list[first]
+    list[first] = nil        -- to allow garbage collection
+    list.first = first + 1
+    return value
+end
+
+function List.popright (list)
+    local last = list.last
+    if list.first > last then error("list is empty") end
+    local value = list[last]
+    list[last] = nil         -- to allow garbage collection
+    list.last = last - 1
+    return value
 end

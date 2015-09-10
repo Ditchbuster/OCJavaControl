@@ -12,7 +12,9 @@ public class Robot {
         state = State.IDLE;
     }
 
+    public void cmd(String line){
 
+    }
 
 
 
