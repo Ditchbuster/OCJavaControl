@@ -15,6 +15,7 @@ public class Server {
     // an ArrayList to keep the list of the Client
     private ArrayList<ClientThread> al;
     // to display time
+    private ClientThread console;
     private SimpleDateFormat sdf;
     // the port number to listen for connection
     private int port;
@@ -113,17 +114,18 @@ public class Server {
     private synchronized void broadcast(String message) {
         // add HH:mm:ss and \n to the message
         String time = sdf.format(new Date());
-        String messageLf = time + " " + message + "\n";
+        String messageLf = time + " " + message;
         // display message on console or GUI
 
-        System.out.print(messageLf);
+        System.out.println(messageLf);
 
         // we loop in reverse order in case we would have to remove a Client
         // because it has disconnected
         for(int i = al.size(); --i >= 0;) {
             ClientThread ct = al.get(i);
+            display("Sending to:" + ct.username);
             // try to write to the Client if it fails remove it from the list
-            if(!ct.writeMsg(messageLf)) {
+            if(!ct.writeMsg(message)) {
                 al.remove(i);
                 display("Disconnected Client " + ct.username + " removed from list.");
             }
@@ -208,9 +210,13 @@ public class Server {
                 // read the username
                 username = in.readLine();
                 display(username + " just connected.");
-                if(username.length()>=5 && username.startsWith("robot")) {
+                if(username.length()>=4 && username.startsWith("robot")) {
                     myRobot = new Robot(username);
-                    out.println("Created robot");
+                    display("Created robot");
+                }
+                else if(username.length()>=6 && username.startsWith("console")){
+                    console = this;
+                    display("Created console");
                 }
             }
             catch (IOException e) {
@@ -241,8 +247,9 @@ public class Server {
                     break;
                 }
                 else{
-                    display(cm);
-                    out.println("FWD " + temp++);
+                    //display(cm);
+                    //out.println("FWD " + temp++);
+                    broadcast(cm);
                 }
 
                 /* Switch on the type of message receive
@@ -299,7 +306,8 @@ public class Server {
             }
             // write the message to the stream
 
-                out.write(msg);
+                //out.write(msg);
+            out.println(msg);
 
             return true;
         }
