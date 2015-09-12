@@ -5,6 +5,7 @@ local text = require("text")
 local event = require("event")
 local shell = require("shell")
 local robot = require("robot")
+local nav = require("navigation")
 
 if not component.isAvailable("internet") then
   io.stderr:write("requires an Internet Card to run!\n")
@@ -84,7 +85,7 @@ end
 
 sock:setTimeout(0.05)
 
-sock:write("robot\r\n")
+sock:write("robot: " .. robot.name() .. "\r\n")
 
 --Function from the built in IRC program
 local function print(message, overwrite)
@@ -126,8 +127,10 @@ local function cmd(line)
 
         end
         return rtn, x
+    elseif (cmd=="STS") then
+        sock:write("STS " .. string.tostring(nav.getPosition()) )
     end
-    --print("end cmd")
+        --print("end cmd")
 end
 
 local function draw()

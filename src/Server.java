@@ -209,14 +209,17 @@ public class Server {
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 // read the username
                 username = in.readLine();
-                display(username + " just connected.");
+                display(username + " just connected. ID:" + id);
                 if(username.length()>=4 && username.startsWith("robot")) {
+                    username = username.substring(7);
                     myRobot = new Robot(username);
-                    display("Created robot");
+                    //display("Created robot");
                 }
                 else if(username.length()>=6 && username.startsWith("console")){
-                    console = this;
-                    display("Created console");
+                    if (console == null) {
+                        console = this;
+                        display("Created console");
+                    }
                 }
             }
             catch (IOException e) {
