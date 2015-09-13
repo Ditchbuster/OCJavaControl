@@ -128,7 +128,8 @@ local function cmd(line)
         end
         return rtn, x
     elseif (cmd=="STS") then
-        sock:write("STS " .. string.tostring(nav.getPosition()) )
+        --sock:write("STS " .. string.tostring(nav.getPosition()) )
+        print("TODO: send status here")
     end
         --print("end cmd")
 end
