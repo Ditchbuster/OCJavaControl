@@ -1,10 +1,11 @@
-/**
+package org.ditchbuster.ocserver; /**
  * Created by CPearson on 9/4/2015.
  */
 import java.io.*;
 import java.net.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import org.ditchbuster.ocasciiconsole.Robot;
 
 /*
  * The server that can be run both as a console application or a GUI
@@ -161,13 +162,13 @@ public class Server {
                 }
                 catch(Exception e) {
                     System.out.println("Invalid port number.");
-                    System.out.println("Usage is: > java Server [portNumber]");
+                    System.out.println("Usage is: > java org.ditchbuster.ocserver.Server [portNumber]");
                     return;
                 }
             case 0:
                 break;
             default:
-                System.out.println("Usage is: > java Server [portNumber]");
+                System.out.println("Usage is: > java org.ditchbuster.ocserver.Server [portNumber]");
                 return;
 
         }
@@ -212,7 +213,7 @@ public class Server {
                 display(username + " just connected. ID:" + id);
                 if(username.length()>=4 && username.startsWith("robot")) {
                     username = username.substring(7);
-                    myRobot = new Robot(username);
+                    //myRobot = new Robot(username); //TODO set to new robot
                     //display("Created robot");
                 }
                 else if(username.length()>=6 && username.startsWith("console")){

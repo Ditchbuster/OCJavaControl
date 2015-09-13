@@ -111,7 +111,7 @@ local function validate(line) --add in strings that are commands
 end
 
 local function cmd(line)
-    --print("Server:")
+    --print("org.ditchbuster.ocserver.Server:")
     local cmd = string.sub(line,1,3)
     --local cmd=line
     print(cmd)
