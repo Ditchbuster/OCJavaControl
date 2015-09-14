@@ -4,6 +4,7 @@
     <exclude-output />
     <content url="file://$MODULE_DIR$/../OCAsciiConsole">
       <sourceFolder url="file://$MODULE_DIR$/../OCAsciiConsole/src" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/../OCAsciiConsole" />
       <excludeFolder url="file://$MODULE_DIR$/../OCAsciiConsole/.idea" />
       <excludeFolder url="file://$MODULE_DIR$/../OCAsciiConsole/out" />
     </content>
