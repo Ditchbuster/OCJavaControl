@@ -1,11 +1,12 @@
-package org.ditchbuster.ocserver; /**
+package org.ditchbuster.ocserver;
+/**
  * Created by CPearson on 9/4/2015.
  */
 import java.io.*;
 import java.net.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import org.ditchbuster.ocasciiconsole.Robot;
+
 
 /*
  * The server that can be run both as a console application or a GUI
@@ -22,6 +23,7 @@ public class Server {
     private int port;
     // the boolean that will be turned of to stop the server
     private boolean keepGoing;
+    private World world;
 
 
     /*
@@ -37,6 +39,7 @@ public class Server {
         sdf = new SimpleDateFormat("HH:mm:ss");
         // ArrayList for the Client list
         al = new ArrayList<ClientThread>();
+        world = new WorldBuilder(50,50).makeCaves().build();
     }
 
     public void start() {
@@ -86,20 +89,7 @@ public class Server {
             display(msg);
         }
     }
-    /*
-     * For the GUI to stop the server
-     */
-    protected void stop() {
-        keepGoing = false;
-        // connect to myself as Client to exit statement
-        // Socket socket = serverSocket.accept();
-        try {
-            new Socket("localhost", port);
-        }
-        catch(Exception e) {
-            // nothing I can really do
-        }
-    }
+
     /*
      * Display an event (not a message) to the console or the GUI
      */
@@ -183,6 +173,8 @@ public class Server {
         Socket socket;
         PrintWriter out;
         BufferedReader in;
+        ObjectOutputStream Cout;
+        ObjectInputStream Cin;
         String cm; //chat message
         // my unique id (easier for deconnection)
         int id;
@@ -202,7 +194,7 @@ public class Server {
             id = ++uniqueId;
             this.socket = socket;
 			/* Creating both Data Stream */
-            System.out.println("Thread trying to create Object Input/Output Streams");
+            System.out.println("Thread trying to create Input/Output Streams");
             try
             {
                 // create output first
@@ -213,12 +205,16 @@ public class Server {
                 display(username + " just connected. ID:" + id);
                 if(username.length()>=4 && username.startsWith("robot")) {
                     username = username.substring(7);
-                    //myRobot = new Robot(username); //TODO set to new robot
+                    myRobot = new Robot(username,world,this); //TODO set to new robot or check if it already exists..
                     //display("Created robot");
                 }
                 else if(username.length()>=6 && username.startsWith("console")){
                     if (console == null) {
                         console = this;
+                        //out.close();
+                        //in.close();
+                        Cout = new ObjectOutputStream(new BufferedOutputStream(socket.getOutputStream()));
+                        Cin = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
                         display("Created console");
                     }
                 }
@@ -236,26 +232,35 @@ public class Server {
             boolean keepGoing = true;
             while(keepGoing) {
                 // read a String (which is an object)
-                try {
-                    cm = in.readLine();
-                }
-                catch (IOException e) {
-                    display(username + " Exception reading Streams: " + e);
-                    break;
-                }
+                if(console==null) {
+                    try {
+                        cm = in.readLine();
+                    } catch (IOException e) {
+                        display(username + " Exception reading Streams: " + e);
+                        break;
+                    }
 
-                // the message part of the ChatMessage
-                if (cm==null||(cm!="" && cm.contains("logout"))){
-                    display(username + " disconnected with logout message.");
-                    keepGoing=false;
-                    break;
+                    // the message part of the ChatMessage
+                    if (cm == null || (cm != "" && cm.contains("logout"))) {
+                        display(username + " disconnected with logout message.");
+                        keepGoing = false;
+                        break;
+                    } else {
+                        //display(cm);
+                        //out.println("FWD " + temp++);
+                        broadcast(cm);
+                    }
+                }else{
+                    try {
+                        Cin.readObject();
+                    } catch (ClassNotFoundException e){
+                        display(username + " Exception reading Streams: " + e);
+                        break;
+                    } catch (IOException e){
+                        display(username + " Exception reading Streams: " + e);
+                        break;
+                    }
                 }
-                else{
-                    //display(cm);
-                    //out.println("FWD " + temp++);
-                    broadcast(cm);
-                }
-
                 /* Switch on the type of message receive
                 switch(cm.getType()) {
 

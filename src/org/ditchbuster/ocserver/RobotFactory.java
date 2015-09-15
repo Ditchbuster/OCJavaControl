@@ -1,9 +1,5 @@
 package org.ditchbuster.ocserver;
 
-import asciiPanel.AsciiPanel;
-import org.ditchbuster.ocasciiconsole.Robot;
-import org.ditchbuster.ocasciiconsole.World;
-
 /**
  * Created by CPearson on 9/13/2015.
  */
@@ -14,8 +10,8 @@ public class RobotFactory {
         this.world = world;
     }
 
-    public Robot newRobot(){
-        Robot robot = new Robot(world, '@', AsciiPanel.brightWhite);
+    public Robot newRobot(String name,Server.ClientThread ct){//TODO add the robot in properly
+        Robot robot = new Robot(name,world,ct);
         world.addAt(robot,1,1);
         new RobotAi(robot);
         return robot;

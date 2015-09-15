@@ -1,7 +1,6 @@
 package org.ditchbuster.ocserver;
 
-import org.ditchbuster.ocasciiconsole.Robot;
-import org.ditchbuster.ocasciiconsole.Tile;
+
 
 /**
  * Created by CPearson on 9/13/2015.
