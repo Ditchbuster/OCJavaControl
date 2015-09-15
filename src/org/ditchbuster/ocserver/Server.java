@@ -211,8 +211,8 @@ public class Server {
                 else if(username.length()>=6 && username.startsWith("console")){
                     if (console == null) {
                         console = this;
-                        out.close();
-                        in.close();
+                        //out.close();
+                        //in.close();
                         Cout = new ObjectOutputStream(new BufferedOutputStream(socket.getOutputStream()));
                         Cin = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
                         display("Created console");
