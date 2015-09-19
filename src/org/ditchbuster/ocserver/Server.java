@@ -2,11 +2,12 @@ package org.ditchbuster.ocserver;
 /**
  * Created by CPearson on 9/4/2015.
  */
+
 import java.io.*;
 import java.net.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
-
+import java.util.concurrent.TimeUnit;
 
 /*
  * The server that can be run both as a console application or a GUI
@@ -16,6 +17,8 @@ public class Server {
     private static int uniqueId;
     // an ArrayList to keep the list of the Client
     private ArrayList<ClientThread> al;
+    // an ArrayList to keep all the ServerThreads in
+    private ArrayList<ServerThread> st;
     // to display time
     private ClientThread console;
     private SimpleDateFormat sdf;
@@ -24,6 +27,7 @@ public class Server {
     // the boolean that will be turned of to stop the server
     private boolean keepGoing;
     private World world;
+    public enum ClientType {CONSOLE,ROBOT} //types of client, used so thread creates proper streams, used by ServerThread
 
 
     /*
@@ -39,54 +43,49 @@ public class Server {
         sdf = new SimpleDateFormat("HH:mm:ss");
         // ArrayList for the Client list
         al = new ArrayList<ClientThread>();
+        st = new ArrayList<ServerThread>();
         world = new WorldBuilder(50,50).makeCaves().build();
     }
 
     public void start() {
         keepGoing = true;
-		/* create socket server and wait for connection requests */
-        try
+        //Server threads to handle multiports
+        ServerThread t = new ServerThread(port,ClientType.ROBOT);
+        st.add(t);
+        t.start();
+        t = new ServerThread(port+1,ClientType.CONSOLE);
+        st.add(t);
+        t.start();
+        // infinite loop to wait for connections
+
+        while(keepGoing)
         {
-            // the socket used by the server
-            ServerSocket serverSocket = new ServerSocket(port);
-
-            // infinite loop to wait for connections
-            while(keepGoing)
-            {
-                // format message saying we are waiting
-                display("Server waiting for Clients on port " + port + ".");
-
-                Socket socket = serverSocket.accept();  	// accept connection
-                // if I was asked to stop
-                if(!keepGoing)
-                    break;
-                ClientThread t = new ClientThread(socket);  // make a thread of it
-                al.add(t);									// save it in the ArrayList
-                t.start();
-            }
-            // I was asked to stop
             try {
-                serverSocket.close();
-                for(int i = 0; i < al.size(); ++i) {
-                    ClientThread tc = al.get(i);
-                    try {
-                        tc.in.close();
-                        tc.out.close();
-                        tc.socket.close();
-                    }
-                    catch(IOException ioE) {
-                        // not much I can do
-                    }
-                }
-            }
-            catch(Exception e) {
-                display("Exception closing the server and clients: " + e);
+                TimeUnit.SECONDS.sleep(1);
+            }catch (InterruptedException e){
+                display("Main thread interrupted");
+                Thread.currentThread().interrupt();
             }
         }
-        // something went bad
-        catch (IOException e) {
-            String msg = sdf.format(new Date()) + " Exception on new ServerSocket: " + e + "\n";
-            display(msg);
+        // I was asked to stop
+        try {
+            for (ServerThread thread: st){
+                thread.close();
+            }
+            for(int i = 0; i < al.size(); ++i) {
+                ClientThread tc = al.get(i);
+                try {
+                    tc.in.close();
+                    tc.out.close();
+                    tc.socket.close();
+                }
+                catch(IOException ioE) {
+                    // not much I can do
+                }
+            }
+        }
+        catch(Exception e) {
+            display("Exception closing the server and clients: " + e);
         }
     }
 
@@ -167,7 +166,7 @@ public class Server {
         server.start();
     }
 
-    /** One instance of this thread will run for each client */
+    /** One instance of this thread will run for each client */ //TODO Move this to own class and diff between console and robot
     class ClientThread extends Thread {
         // the socket where to listen/talk
         Socket socket;
@@ -185,10 +184,12 @@ public class Server {
         String date;
         // robot this thread is connected to
         Robot myRobot;
+        ClientType type;
 
         // Constructore
-        ClientThread(Socket socket) {
+        ClientThread(Socket socket,ClientType type) {
 
+            this.type=type;
             temp =0;
             // a unique id
             id = ++uniqueId;
@@ -201,21 +202,18 @@ public class Server {
                 out = new PrintWriter(socket.getOutputStream(), true);
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 // read the username
-                username = in.readLine();
-                display(username + " just connected. ID:" + id);
-                if(username.length()>=4 && username.startsWith("robot")) {
-                    username = username.substring(7);
-                    myRobot = new Robot(username,world,this); //TODO set to new robot or check if it already exists..
-                    //display("Created robot");
+                //username = in.readLine();
+                display(type + " just connected. ID:" + id);
+                if(type==ClientType.ROBOT) {
+                    //username = username.substring(7);
+                    //myRobot = new Robot(username,world,this); //TODO set to new robot or check if it already exists..
+                    display("Created robot");
                 }
-                else if(username.length()>=6 && username.startsWith("console")){
+                else if(type==ClientType.CONSOLE){
                     if (console == null) {
                         console = this;
-                        //out.close();
-                        //in.close();
-                        Cout = new ObjectOutputStream(new BufferedOutputStream(socket.getOutputStream()));
-                        Cin = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
                         display("Created console");
+                        out.println("SEND TEST");
                     }
                 }
             }
@@ -252,10 +250,7 @@ public class Server {
                     }
                 }else{
                     try {
-                        Cin.readObject();
-                    } catch (ClassNotFoundException e){
-                        display(username + " Exception reading Streams: " + e);
-                        break;
+                        in.readLine();
                     } catch (IOException e){
                         display(username + " Exception reading Streams: " + e);
                         break;
@@ -319,6 +314,71 @@ public class Server {
             out.println(msg);
 
             return true;
+        }
+    }
+    /** One instance per port to listen on  **/
+    class ServerThread extends Thread{
+        ServerSocket socket;
+        boolean keepGoing;
+        ClientType type;
+
+        public ServerThread(int port,ClientType type){
+            this.type = type;
+            try {
+                this.socket = new ServerSocket(port);
+            }catch (IOException e) {
+                    String msg = sdf.format(new Date()) + " Exception on new ServerSocket: " + e + "\n";
+                    display(msg);
+            }
+            keepGoing=true;
+        }
+
+        @Override
+        public void run() {
+            try
+            {
+                // infinite loop to wait for connections
+                while(keepGoing)
+                {
+                    // format message saying we are waiting
+                    display("Server waiting for Clients on port " + socket.getLocalPort() + ".");
+
+                    Socket TmpSocket = socket.accept();  	// accept connection
+                    // if I was asked to stop
+                    if(!keepGoing)
+                        break;
+                    ClientThread t = new ClientThread(TmpSocket,type);  // make a thread of it //TODO this will close all clients, make a seperate list for CONSOLE and ROBOT
+                    al.add(t);									// save it in the ArrayList
+                    t.start();
+                }
+                // I was asked to stop
+                try { //TODO move this to the close function
+                    socket.close();
+                    for(int i = 0; i < al.size(); ++i) {
+                        ClientThread tc = al.get(i);
+                        try {
+                            tc.in.close();
+                            tc.out.close();
+                            tc.socket.close();
+                        }
+                        catch(IOException ioE) {
+                            // not much I can do
+                        }
+                    }
+                }
+                catch(Exception e) {
+                    display("Exception closing the server and clients: " + e);
+                }
+            }
+            // something went bad
+            catch (IOException e) {
+                String msg = sdf.format(new Date()) + " Exception on new ServerSocket: " + e + "\n";
+                display(msg);
+            }
+        }
+
+        public void close(){
+                keepGoing=false;
         }
     }
 }
